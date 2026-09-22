@@ -1,26 +1,27 @@
-#my apikey: sk-e50a696144b041c194c9ad264850a783
 import urllib.request
-import getpass
 import json
-import time
 import tkinter
+import os
+from datetime import datetime
+from chart import show_chart, update_chart
+
+has_requested = False
 
 def get_balance(key):
     request = urllib.request.Request(
         "https://api.deepseek.com/user/balance",
         headers = {"Authorization": "Bearer " + key}
     )
-    try:
-        response = urllib.request.urlopen(request)
-        data = response.read()
-        newdata = json.loads(data)
-        total_balance = newdata["balance_infos"][0]["total_balance"]
-        return total_balance
-    except urllib.error.HTTPError as e:
-        if e.code == 401:
-            return -1
-        else:
-            return -2
+    response = urllib.request.urlopen(request)
+    data = json.loads(response.read())
+    return data["balance_infos"][0]["total_balance"]
+
+if not os.path.exists("history.json"):
+    with open("history.json", "w") as f:
+        f.write("[]")
+
+with open("history.json", "r") as f:
+    history = json.load(f)
 
 window = tkinter.Tk()
 window.title("DeepBalance")
@@ -32,20 +33,29 @@ label = tkinter.Label(window, text = " ")
 label.pack()
 
 def query_balance():
+    global has_requested
     api_key = entry.get()
-    res = get_balance(api_key)
-    label.config(text = res)
+    try:
+        res = get_balance(api_key)
+        label.config(text = res)
+        time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        history.append({"time": time, "balance": res})
+        with open("history.json", "w") as f:
+            json.dump(history, f, indent = 4)
+        update_chart(history, ax, canvas)
+        if not has_requested:
+            button.config(text = "Renew")
+            has_requested = True
+    except urllib.error.HTTPError as e:
+        if e.code == 401:
+            label.config(text = "Invalid API KEY")
+        else:
+            label.config(text = f"HTTP Error: {e.code}")
+    window.after(300000, query_balance)
+
+ax, canvas = show_chart(history, window)
 
 button = tkinter.Button(window, text = "Sure", command = query_balance)
 button.pack()
-
-'''
-while res == -1 or res == -2:
-    if res == -1:
-        print("The API Key is wrong.")
-    print("Try Again.")
-    api_key = getpass.getpass("APIKey: ")
-    res = get_balance(api_key)
-'''
 
 window.mainloop()
