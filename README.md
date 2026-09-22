@@ -1,6 +1,7 @@
 # DeepBalance
 
 A small desktop application for monitoring Deepseek API balance.
+All by my own! yet so simple...
 
 ## Features
 
