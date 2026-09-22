@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import matplotlib.pyplot as plot
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.dates as dates
@@ -7,9 +7,14 @@ def show_chart(history, window):
     times = []
     balances = []
 
+    now = datetime.now()
+    start = now - timedelta(hours = 24)
+
     for record in history:
-        times.append(datetime.strptime(record["time"], "%Y-%m-%d %H:%M:%S"))
-        balances.append(float(record["balance"]))
+        record_time = datetime.strptime(record["time"], "%Y-%m-%d %H:%M:%S")
+        if start <= record_time <= now:
+            times.append(datetime.strptime(record["time"], "%Y-%m-%d %H:%M:%S"))
+            balances.append(float(record["balance"]))
 
     figure = plot.Figure(figsize = (6, 4))
     ax = figure.add_subplot(111)
@@ -32,9 +37,14 @@ def update_chart(history, ax, canvas):
     times = []
     balances = []
 
+    now = datetime.now()
+    start = now - timedelta(hours = 24)
+
     for record in history:
-        times.append(datetime.strptime(record["time"], "%Y-%m-%d %H:%M:%S"))
-        balances.append(float(record["balance"]))
+        record_time = datetime.strptime(record["time"], "%Y-%m-%d %H:%M:%S")
+        if start <= record_time <= now:
+            times.append(datetime.strptime(record["time"], "%Y-%m-%d %H:%M:%S"))
+            balances.append(float(record["balance"]))
 
     ax.clear()
     ax.plot(times, balances, label = "Your balances", color = "green", linestyle = "--", marker = "o")
